@@ -8,7 +8,7 @@
         "url": "https://github.com/terafin/mqtt-unifi-protect-bridge"
     },
     "scripts": {
-        "start": "node mqtt-eight-sleep-bridge.js"
+        "start": "node mqtt-unifi-protect-bridge.js"
     },
     "dependencies": {
         "homeautomation-js-lib": "git+https://terafin:moyawhisper1@gitlab.siliconspirit.net/home/homeautomation-js-lib.git",
