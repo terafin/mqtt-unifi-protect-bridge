@@ -141,7 +141,7 @@ const hitBootstrapURL = function() {
 
 			}
 			client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name, 'state'), mqtt_helpers.generateTopic(state), mqttOptions)
-			client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name), isMotionDetected ? '1' : 0, mqttOptions)
+			client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name), isMotionDetected ? '1' : '0', mqttOptions)
 		})
 	})
 
