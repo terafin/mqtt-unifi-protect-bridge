@@ -32,9 +32,8 @@ build:
   except:
     - master
 
-# deploy:
-#   stage: deploy
-#   image: terafin/rancher-cli-k8s:latest
-#   script:
-#     - rancher login "$RANCHER_URL" --skip-verify --token "$RANCHER_BEARER_TOKEN" --context "$RANCHER_CONTEXT"
-#     - rancher kubectl --namespace="$RANCHER_NAMESPACE" patch deployment "$CI_PROJECT_NAME" -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"date\":\"`date +'%s'`\"}}}}}"
+deploy:
+  stage: deploy
+  script:
+    - apk add --update curl
+    - curl -H "X-Docker-Token:$DOCKER_AUTH_TOKEN"  -X GET "https://siliconspirit.net/hooks/docker-iot-update?DOCKER_SERVICE_NAME=automation_$CI_PROJECT_NAME&DOCKER_IMAGE_PREFIX=$DOCKER_REGISTRY_USER&DOCKER_IMAGE_NAME=$CI_PROJECT_NAME&DOCKER_IMAGE_TAG=$DOCKER_IMAGE_TAG"
