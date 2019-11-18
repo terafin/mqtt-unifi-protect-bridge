@@ -1,0 +1,20 @@
+name: Build & Deploy
+on: 
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.PROJECT_NAME }}
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Deploy
+      uses: wei/curl@v1
+      with:
+        args: -H "X-Docker-Token:${{ secrets.WEBHOOK_AUTH_TOKEN }}"  -X GET "${{ secrets.WEBHOOK_URL }}?DOCKER_SERVICE_NAME=automation_${{ secrets.PROJECT_NAME }}&DOCKER_IMAGE_PREFIX=${{ secrets.DOCKER_USERNAME }}&DOCKER_IMAGE_NAME=${{ secrets.PROJECT_NAME }}&DOCKER_IMAGE_TAG=${{ secrets.DOCKER_IMAGE_TAG }}"
