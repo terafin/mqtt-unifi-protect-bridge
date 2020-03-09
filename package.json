@@ -16,7 +16,7 @@
         "moment": "^2.24.0",
         "mqtt": "^3.0.0",
         "repeat": "0.0.6",
-        "request": "^2.88.0"
+        "request": "^2.88.2"
     },
     "engines": {
         "node": ">=4"
