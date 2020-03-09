@@ -1,24 +1,24 @@
 {
-    "name": "mqtt-unifi-protect-bridge",
-    "version": "0.0.1",
-    "description": "Bridge Unifi Protect HTTP to MQTT",
-    "license": "MIT",
-    "main": "mqtt-unifi-protect-bridge.js",
-    "repository": {
-        "url": "https://github.com/terafin/mqtt-unifi-protect-bridge"
-    },
-    "scripts": {
-        "start": "node mqtt-unifi-protect-bridge.js"
-    },
-    "dependencies": {
-        "homeautomation-js-lib": "https://github.com/terafin/homeautomation-js-lib.git",
-        "lodash": "^4.17.15",
-        "moment": "^2.24.0",
-        "mqtt": "^3.0.0",
-        "repeat": "0.0.6",
-        "request": "^2.88.2"
-    },
-    "engines": {
-        "node": ">=4"
-    }
+  "name": "mqtt-unifi-protect-bridge",
+  "version": "0.0.1",
+  "description": "Bridge Unifi Protect HTTP to MQTT",
+  "license": "MIT",
+  "main": "mqtt-unifi-protect-bridge.js",
+  "repository": {
+    "url": "https://github.com/terafin/mqtt-unifi-protect-bridge"
+  },
+  "scripts": {
+    "start": "node mqtt-unifi-protect-bridge.js"
+  },
+  "dependencies": {
+    "homeautomation-js-lib": "https://github.com/terafin/homeautomation-js-lib.git",
+    "lodash": "^4.17.15",
+    "moment": "^2.24.0",
+    "mqtt": "^3.0.0",
+    "repeat": "0.0.6",
+    "request": "^2.88.2"
+  },
+  "engines": {
+    "node": ">=4"
+  }
 }
