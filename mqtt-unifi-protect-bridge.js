@@ -153,37 +153,3 @@ const startWatching = function() {
 }
 
 startWatching()
-
-// eight.start(username, password, pollTime)
-
-// eight.on('updated', (result) => {
-// 	logging.debug('eight updated')
-// 	if (_.isNil(result)) { 
-// 		return 
-// 	}
-    
-// 	Object.keys(result).forEach(key => {
-// 		const value = result[key]
-// 		logging.debug('   base: ' + key + ': ' + value)
-// 		var topic = baseTopic + '/' + key
-
-// 		client.smartPublish(topic, JSON.stringify(value).toString(), mqttOptions)
-// 	})
-// })
-
-// eight.on('user-updated', (user) => {
-// 	logging.debug('user updated: ' + user.name())
-
-// 	var topic = baseTopic + '/' + user.name() + '/'
-
-// 	client.smartPublish(topic + 'nowHeating', user.nowHeating().toString(), mqttOptions)
-// 	client.smartPublish(topic + 'present', user.present().toString(), mqttOptions)
-// 	client.smartPublish(topic + 'heatingLevel', user.heatingLevel().toString(), mqttOptions)
-// 	client.smartPublish(topic + 'userId', user.userId().toString(), mqttOptions)
-// 	client.smartPublish(topic + 'heatingDuration', user.heatingDuration().toString(), mqttOptions)
-// 	client.smartPublish(topic + 'targetHeatingLevel', user.targetHeatingLevel().toString(), mqttOptions)
-// 	client.smartPublish(topic + 'presenceEnd', user.presenceEnd().toString(), mqttOptions)
-// 	client.smartPublish(topic + 'presenceStart', user.presenceStart().toString(), mqttOptions)
-
-// })
-
