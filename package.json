@@ -13,15 +13,11 @@
     "dependencies": {
         "homeautomation-js-lib": "https://github.com/terafin/homeautomation-js-lib.git",
         "lodash": "latest",
-        "moment": "latest",
         "mqtt": "latest",
         "repeat": "0.0.6",
         "@tensorflow-models/coco-ssd": "~2.0.1",
         "@tensorflow/tfjs-node": "1.4.0",
-        "compression": "latest",
-        "request": "latest",
-        "got": "latest",
-        "node-fetch": "latest"
+        "got": "latest"
     },
     "engines": {
         "node": ">=4"
