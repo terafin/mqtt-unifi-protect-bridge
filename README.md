@@ -32,6 +32,8 @@ services:
       MQTT_HOST: YOUR_MQTT_URL (eg: mqtt://mqtt.yourdomain.net)
       (OPTIONAL) MQTT_USER: YOUR_MQTT_USERNAME
       (OPTIONAL) MQTT_PASS: YOUR_MQTT_PASSWORD
+      (OPTIONAL) ENABLE_IMAGE_ANALYSIS: "1" (turns on coco model image analysis)
+      (OPTIONAL) ANALYSIS_THRESHOLD: "0.9" (confidence level on match, 0.7 is default)
 ```
 
 Here's an example publish for some of my cameras:
