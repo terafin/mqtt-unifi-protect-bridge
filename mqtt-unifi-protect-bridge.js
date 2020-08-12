@@ -5,7 +5,7 @@ const logging = require('homeautomation-js-lib/logging.js')
 const health = require('homeautomation-js-lib/health.js')
 const mqtt_helpers = require('homeautomation-js-lib/mqtt_helpers.js')
 const got = require('got')
-const repeat = require('repeat')
+const repeat = require('repeat').default
 const analysis = require('./lib/analysis')
 const API_AUTH_URL_SUFFIX = '/api/auth'
 const API_ACCESS_KEY_URL_SUFFIX = '/api/auth/access-key'
@@ -208,7 +208,9 @@ const hitBootstrapURL = function() {
 
 const startWatching = function() {
     logging.info('starting poll')
-    repeat(hitBootstrapURL).every(pollTime, 's').start.in(1, 'sec')
+    repeat()
+        .do(() => hitBootstrapURL())
+        .every(pollTime * 1000)
 }
 
 startWatching()
