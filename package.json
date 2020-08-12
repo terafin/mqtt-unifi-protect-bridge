@@ -14,7 +14,7 @@
         "homeautomation-js-lib": "https://github.com/terafin/homeautomation-js-lib.git",
         "lodash": "latest",
         "mqtt": "latest",
-        "repeat": "0.0.6",
+        "repeat": "1.2.0",
         "@tensorflow-models/coco-ssd": "~2.0.1",
         "@tensorflow/tfjs-node": "1.4.0",
         "got": "latest"
