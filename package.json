@@ -20,6 +20,6 @@
         "got": "latest"
     },
     "engines": {
-        "node": ">=4"
+        "node": ">=10"
     }
 }
