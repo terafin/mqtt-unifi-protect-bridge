@@ -9,6 +9,7 @@ I have a collection of bridges, and the general format of these begins with thes
       MQTT_HOST: YOUR_MQTT_URL (eg: mqtt://mqtt.yourdomain.net)
       (OPTIONAL) MQTT_USER: YOUR_MQTT_USERNAME
       (OPTIONAL) MQTT_PASS: YOUR_MQTT_PASSWORD
+      (OPTIONAL) MQTT_STATUS_TOPIC_PREFIX: '/status_prefix/' 
 ```
 
 This will publish and (optionally) subscribe to events for this bridge with the TOPIC_PREFIX of you choosing.
