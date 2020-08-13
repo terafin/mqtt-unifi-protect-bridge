@@ -140,15 +140,29 @@ var analysisMap = {}
 async function pollBootstrap() {
     try {
         const body = await getAPIBootstrap()
-
+        logging.debug('body: ' + JSON.stringify(body))
         const cameras = body.cameras
 
         for (const camera of cameras) {
             const name = camera.name
             const state = camera.state
+            const lastRing = camera.lastRing
+            const lastMotion = camera.lastMotion
             const isMotionDetected = camera.isMotionDetected
+            const now = new Date()
             logging.debug('** camera: ' + JSON.stringify(camera))
 
+            if (!_.isNil(lastRing)) {
+                logging.debug('** camera ring:')
+                logging.debug('      lastRing: ' + lastRing)
+                const ringDate = new Date(lastRing)
+                logging.debug('      ringDate: ' + ringDate)
+                const ringTimeDifferenceSeconds = (now - lastRing) / 1000
+                logging.debug('      ringTimeDifferenceSeconds: ' + ringTimeDifferenceSeconds)
+
+                const recentRing = (ringTimeDifferenceSeconds < pollTime * 2) ? 1 : 0
+                client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name, 'ringing'), recentRing ? '1' : '0', mqttOptions)
+            }
 
             if (isMotionDetected) {
                 logging.info('** camera motion:')
