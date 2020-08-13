@@ -278,7 +278,7 @@ client.on('message', (topic, message) => {
                     const camera_name = mqtt_helpers.generateTopic(camera.name)
 
                     if (name == camera_name)
-                        updateDoorbellMessage(camera, messag.toString())
+                        updateDoorbellMessage(camera, message.toString())
                 }
             }
 
