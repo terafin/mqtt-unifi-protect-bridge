@@ -10,6 +10,7 @@ const analysis = require('./lib/analysis')
 const API_AUTH_URL_SUFFIX = '/api/auth'
 const API_ACCESS_KEY_URL_SUFFIX = '/api/auth/access-key'
 const API_BOOTSTRAP_SUFFIX = '/api/bootstrap'
+const API_CAMERA_PATCH = '/api/cameras/'
 
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0
 
@@ -51,6 +52,9 @@ if (_.isNil(baseTopic)) {
 }
 
 var connectedEvent = function() {
+    const subscriptionTopic = mqtt_helpers.generateTopic(baseTopic) + '/+/+/set'
+    logging.info('subscribing to: ' + subscriptionTopic)
+    client.subscribe(subscriptionTopic, { qos: 1 })
     health.healthyEvent()
 }
 
@@ -88,6 +92,37 @@ async function getAPIBootstrap() {
     return bootstrap_body
 }
 
+async function updateDoorbellMessage(camera, message) {
+    if (_.isNil(lastAccessToken)) {
+        await authenticate()
+    }
+
+    const cameraPatchURL = generateURL(API_CAMERA_PATCH) + camera.id
+    var resultBody = null
+    const patchJSON = {
+        lcdMessage: {
+            type: "CUSTOM_MESSAGE",
+            text: message
+        }
+    }
+
+    logging.info('sending patch to url: ' + cameraPatchURL + '   patch: ' + JSON.stringify(patchJSON))
+    try {
+        const response = await got.patch(cameraPatchURL, {
+            headers: {
+                'Authorization': 'Bearer ' + lastAccessToken.toString()
+            },
+            json: patchJSON
+        })
+
+        resultBody = JSON.parse(response.body)
+    } catch (error) {
+        logging.error('update patch failed: ' + error)
+        throw ('updateDoorbellMessage error ' + error)
+    }
+
+    return resultBody
+}
 
 async function authenticate() {
     const authURL = generateURL(API_AUTH_URL_SUFFIX)
@@ -134,14 +169,15 @@ const snapshotURLForCamera = function(camera) {
     return generateURL('/api/cameras/' + camera.id + '/snapshot?accessKey=' + encodeURIComponent(lastAccessKey) + '&force=true')
 }
 
-
 var analysisMap = {}
+var lastCameras = null
 
 async function pollBootstrap() {
     try {
         const body = await getAPIBootstrap()
         logging.debug('body: ' + JSON.stringify(body))
         const cameras = body.cameras
+        lastCameras = cameras
 
         for (const camera of cameras) {
             const name = camera.name
@@ -226,5 +262,32 @@ const startWatching = function() {
         hitBootstrapURL()
     }, pollTime * 1000)
 }
+
+
+client.on('message', (topic, message) => {
+    logging.info(' => ' + topic + ':' + message)
+    const components = topic.split('/')
+    const name = components[components.length - 3]
+    const command = components[components.length - 2]
+    switch (command) {
+        case 'message':
+            if (!_.isNil(lastCameras)) {
+                logging.info('Looking for camera name: ' + name)
+
+                for (const camera of lastCameras) {
+                    const camera_name = mqtt_helpers.generateTopic(camera.name)
+
+                    if (name == camera_name)
+                        updateDoorbellMessage(camera, messag.toString())
+                }
+            }
+
+            break
+        default:
+            logging.warn('Unhandled command: ' + command)
+            break
+
+    }
+})
 
 startWatching()
