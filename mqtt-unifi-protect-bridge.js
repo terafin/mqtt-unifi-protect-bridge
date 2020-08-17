@@ -7,19 +7,20 @@ const mqtt_helpers = require('homeautomation-js-lib/mqtt_helpers.js')
 const got = require('got')
 const interval = require('interval-promise')
 const analysis = require('./lib/analysis')
-const API_AUTH_URL_SUFFIX = '/api/auth'
-const API_ACCESS_KEY_URL_SUFFIX = '/api/auth/access-key'
-const API_BOOTSTRAP_SUFFIX = '/api/bootstrap'
-const API_CAMERA_PATCH = '/api/cameras/'
-
-process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0
+const authentication = require('./lib/auth.js')
+const protect = require('./lib/protect.js')
+const utils = require('./lib/utils.js')
 
 const username = process.env.USERNAME
 const password = process.env.PASSWORD
-const protectURL = process.env.PROTECT_URL
 
-var lastAccessToken = null
-var lastAccessKey = null
+authentication.setAccount(username, password)
+
+var authenticate_poll_time = process.env.AUTH_POLL_FREQUENCY
+
+if (_.isNil(authenticate_poll_time)) {
+    authenticate_poll_time = 60 * 60
+}
 
 var pollTime = process.env.POLL_FREQUENCY
 
@@ -62,119 +63,16 @@ var disconnectedEvent = function() {
     health.unhealthyEvent()
 }
 
-const generateURL = function(suffix) {
-    return '' + protectURL + suffix
-}
-
-async function getAPIBootstrap() {
-    if (_.isNil(lastAccessToken)) {
-        await authenticate()
-    }
-
-    const bootstrapURL = generateURL(API_BOOTSTRAP_SUFFIX)
-    var bootstrap_body = null
-
-
-    try {
-        // const response = await got.get(bootstrapURL, { 'auth': { 'bearer': lastAccessToken }, json: true })
-        const bootstrap_response = await got.get(bootstrapURL, {
-            headers: {
-                'Authorization': 'Bearer ' + lastAccessToken.toString()
-            }
-        })
-
-        bootstrap_body = JSON.parse(bootstrap_response.body)
-    } catch (error) {
-        logging.error('get api bootstrap failed: ' + error)
-        throw ('getAPIBootstrap error ' + error)
-    }
-
-    return bootstrap_body
-}
-
-async function updateDoorbellMessage(camera, message) {
-    if (_.isNil(lastAccessToken)) {
-        await authenticate()
-    }
-
-    const cameraPatchURL = generateURL(API_CAMERA_PATCH) + camera.id
-    var resultBody = null
-    const patchJSON = {
-        lcdMessage: {
-            type: "CUSTOM_MESSAGE",
-            text: message
-        }
-    }
-
-    logging.info('sending patch to url: ' + cameraPatchURL + '   patch: ' + JSON.stringify(patchJSON))
-    try {
-        const response = await got.patch(cameraPatchURL, {
-            headers: {
-                'Authorization': 'Bearer ' + lastAccessToken.toString()
-            },
-            json: patchJSON
-        })
-
-        resultBody = JSON.parse(response.body)
-    } catch (error) {
-        logging.error('update patch failed: ' + error)
-        throw ('updateDoorbellMessage error ' + error)
-    }
-
-    return resultBody
-}
-
-async function authenticate() {
-    const authURL = generateURL(API_AUTH_URL_SUFFIX)
-    const accesskeyURL = generateURL(API_ACCESS_KEY_URL_SUFFIX)
-    var accessToken = null
-
-    logging.info('oauth request url: ' + authURL)
-    logging.debug(' accesskeyURL: ' + accesskeyURL)
-
-    try {
-        const response = await got.post(authURL, { form: { grant_type: 'password', username: username, password: password } })
-        const body = response.body
-        const headers = response.headers
-        accessToken = headers.authorization
-        logging.info('accessToken: ' + accessToken)
-        if (!_.isNil(accessToken)) {
-            lastAccessToken = accessToken
-        } else {
-            logging.error(' no access token loaded - bad auth?')
-        }
-
-        const accessKeyResponse = await got.post(accesskeyURL, {
-            headers: {
-                'Authorization': 'Bearer ' + accessToken.toString()
-            }
-        })
-
-        lastAccessKey = JSON.parse(accessKeyResponse.body).accessKey
-    } catch (error) {
-        logging.error('authenticate failed: ' + error)
-        throw ('authenticate error ' + error)
-
-    }
-
-    return accessToken
-}
-
-
 
 // Setup MQTT
 var client = mqtt_helpers.setupClient(connectedEvent, disconnectedEvent)
-
-const snapshotURLForCamera = function(camera) {
-    return generateURL('/api/cameras/' + camera.id + '/snapshot?accessKey=' + encodeURIComponent(lastAccessKey) + '&force=true')
-}
 
 var analysisMap = {}
 var lastCameras = null
 
 async function pollBootstrap() {
     try {
-        const body = await getAPIBootstrap()
+        const body = await protect.getAPIBootstrap()
         logging.debug('body: ' + JSON.stringify(body))
         const cameras = body.cameras
         lastCameras = cameras
@@ -208,8 +106,7 @@ async function pollBootstrap() {
 
                 if (shouldDoImageAnalysis) {
                     if (!analysis.hasPendingAnalysisForCamera(camera)) {
-                        const snapshotResponse = await got.get(snapshotURLForCamera(camera))
-                        const imageData = await snapshotResponse.rawBody
+                        const imageData = await protect.getSnapshotForCamera(camera)
                         const objects = await analysis.analyzeObjectsForCamera(camera, imageData)
                         const oldAnalysis = analysisMap[camera.id]
 
@@ -258,9 +155,15 @@ const hitBootstrapURL = function() {
 
 const startWatching = function() {
     logging.info('starting poll')
+
     interval(async() => {
         hitBootstrapURL()
     }, pollTime * 1000)
+
+    interval(async() => {
+        logging.info(' => polling auth')
+        await authentication.authenticate()
+    }, authenticate_poll_time * 1000)
 }
 
 
@@ -278,7 +181,7 @@ client.on('message', (topic, message) => {
                     const camera_name = mqtt_helpers.generateTopic(camera.name)
 
                     if (name == camera_name)
-                        updateDoorbellMessage(camera, message.toString())
+                        protect.updateDoorbellMessage(camera, message.toString())
                 }
             }
 
