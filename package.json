@@ -16,7 +16,7 @@
         "mqtt": "latest",
         "interval-promise": "latest",
         "@tensorflow-models/coco-ssd": "^2.1.0",
-        "@tensorflow/tfjs-node": "^2.3.0",
+        "@tensorflow/tfjs-node": "^2.8.4",
         "got": "latest"
     },
     "engines": {
