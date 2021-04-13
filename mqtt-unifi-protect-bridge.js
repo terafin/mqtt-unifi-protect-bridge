@@ -145,19 +145,15 @@ async function pollBootstrap() {
     }
 }
 
-const hitBootstrapURL = function() {
-    try {
-        pollBootstrap()
-    } catch (error) {
-        logging.error('error polling: ' + error)
-    }
-}
-
 const startWatching = function() {
     logging.info('starting poll')
 
     interval(async() => {
-        hitBootstrapURL()
+        try {
+            pollBootstrap()
+        } catch (error) {
+            logging.error('error polling: ' + error)
+        }
     }, pollTime * 1000)
 
     interval(async() => {
