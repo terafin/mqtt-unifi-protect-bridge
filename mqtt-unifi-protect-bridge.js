@@ -6,13 +6,14 @@ const health = require('homeautomation-js-lib/health.js')
 const mqtt_helpers = require('homeautomation-js-lib/mqtt_helpers.js')
 const got = require('got')
 const interval = require('interval-promise')
-const analysis = require('./lib/analysis')
 const authentication = require('./lib/auth.js')
 const protect = require('./lib/protect.js')
 const utils = require('./lib/utils.js')
 
 const username = process.env.USERNAME
 const password = process.env.PASSWORD
+
+var cachedBootstrap = null
 
 authentication.setAccount(username, password)
 
@@ -33,10 +34,6 @@ var shouldRetain = process.env.MQTT_RETAIN
 if (_.isNil(shouldRetain)) {
     shouldRetain = true
 }
-
-const shouldDoImageAnalysis = Number(process.env.ENABLE_IMAGE_ANALYSIS)
-
-logging.info(' * enabling image analysis: ' + shouldDoImageAnalysis)
 
 var mqttOptions = { qos: 1 }
 
@@ -67,8 +64,116 @@ var disconnectedEvent = function() {
 // Setup MQTT
 var client = mqtt_helpers.setupClient(connectedEvent, disconnectedEvent)
 
-var analysisMap = {}
 var lastCameras = null
+
+// {
+//     "id": "6076012103001603e701eb8f",
+//     "type": "smartDetectZone",
+//     "start": 1618346270231,
+//     "end": 1618346277093,
+//     "score": 95,
+//     "smartDetectTypes": [
+//         "person"
+//     ],
+//     "smartDetectEvents": [],
+//     "camera": "5ff5204001bcb603e7000408",
+//     "partition": null,
+//     "thumbnail": "e-6076012103001603e701eb8f",
+//     "heatmap": "e-6076012103001603e701eb8f",
+//     "modelKey": "event"
+// },
+
+// {
+//     "id": "6076003200bd1603e701eb74",
+//     "type": "ring",
+//     "start": 1618346034188,
+//     "end": 1618346035188,
+//     "score": 0,
+//     "smartDetectTypes": [],
+//     "smartDetectEvents": [],
+//     "camera": "5ff5204001bcb603e7000408",
+//     "partition": null,
+//     "thumbnail": "e-6076003200bd1603e701eb74",
+//     "heatmap": "e-6076003200bd1603e701eb74",
+//     "modelKey": "event"
+// },
+
+// {
+//     "id": "6075430d00ae1603e701e401",
+//     "type": "motion",
+//     "start": 1618297610112,
+//     "end": 1618297615447,
+//     "score": 18,
+//     "smartDetectTypes": [],
+//     "smartDetectEvents": [],
+//     "camera": "5ff5204001deb603e7000409",
+//     "partition": null,
+//     "thumbnail": "e-6075430d00ae1603e701e401",
+//     "heatmap": "e-6075430d00ae1603e701e401",
+//     "modelKey": "event"
+// },
+
+async function pollEvents() {
+    try {
+        const events = await protect.getEvents(['ring', 'motion', 'smartDetectZone'])
+        logging.debug('events: ' + JSON.stringify(events))
+
+        const now = new Date()
+        events.forEach(event => {
+            const id = event.id
+            const type = event.type
+            const start = event.start
+            const end = event.end
+            const score = event.score
+            const camera_id = event.camera
+            const smartDetectTypes = event.smartDetectTypes
+            var camera_name = id
+            const startTimeSinceNow = (now.getTime() - start) / 1000
+            const threshold = (Number(pollTime) + 5)
+
+            const cameras = cachedBootstrap.cameras
+            cameras.forEach(camera_record => {
+                if (camera_record.id == camera_id) {
+                    camera_name = camera_record.name
+                }
+            })
+
+            if (startTimeSinceNow < threshold) {
+                logging.info('** camera_name: ' + camera_name)
+                logging.info('      event type: ' + type)
+                logging.info('       threshold: ' + threshold)
+                logging.info('           start: ' + start)
+                logging.info('             now: ' + now.getTime())
+                logging.info('           score: ' + score)
+                logging.info('           startTimeSinceNow: ' + startTimeSinceNow)
+
+                if (!_.isNil(smartDetectTypes)) {
+                    logging.info('      smart types: ' + JSON.stringify(smartDetectTypes))
+                }
+
+                if (type == 'smartDetectZone') {
+                    smartDetectTypes.forEach(detected_type => {
+                        client.smartPublish(mqtt_helpers.generateTopic(baseTopic, camera_name, detected_type), '1', mqttOptions)
+
+                        setTimeout(() => {
+                            client.smartPublish(mqtt_helpers.generateTopic(baseTopic, camera_name, detected_type), '0', mqttOptions)
+                        }, (threshold * 1000 * 2));
+                    });
+                }
+            } else {
+                // logging.info('** SKIPPING camera_name: ' + camera_name)
+                // logging.info('      event type: ' + type)
+                // logging.info('       threshold: ' + threshold)
+                // logging.info('           start: ' + start)
+                // logging.info('             now: ' + now.getTime())
+                // logging.info('           score: ' + score)
+                // logging.info('           startTimeSinceNow: ' + startTimeSinceNow)
+            }
+        })
+    } catch (error) {
+        logging.error('Failed to poll bootstrap: ' + error)
+    }
+}
 
 async function pollBootstrap() {
     try {
@@ -76,6 +181,7 @@ async function pollBootstrap() {
         logging.debug('body: ' + JSON.stringify(body))
         const cameras = body.cameras
         lastCameras = cameras
+        cachedBootstrap = body
 
         for (const camera of cameras) {
             const name = camera.name
@@ -98,45 +204,6 @@ async function pollBootstrap() {
                 client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name, 'ringing'), recentRing ? '1' : '0', mqttOptions)
             }
 
-            if (isMotionDetected) {
-                logging.info('** camera motion:')
-                logging.info('            name: ' + name)
-                logging.info('           state: ' + state)
-                logging.info('          motion: ' + isMotionDetected)
-
-                if (shouldDoImageAnalysis) {
-                    if (!analysis.hasPendingAnalysisForCamera(camera)) {
-                        const imageData = await protect.getSnapshotForCamera(camera)
-                        const objects = await analysis.analyzeObjectsForCamera(camera, imageData)
-                        const oldAnalysis = analysisMap[camera.id]
-
-                        if (!_.isNil(objects)) {
-                            Object.keys(objects).forEach(key => {
-                                client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name, 'objects', key), '1', mqttOptions)
-                            })
-                        }
-
-                        if (!_.isNil(oldAnalysis)) {
-                            Object.keys(oldAnalysis).forEach(key => {
-                                if (_.isNil(objects[key])) {
-                                    client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name, 'objects', key), '0', mqttOptions)
-                                }
-                            })
-                        }
-
-                        analysisMap[camera.id] = objects
-                    }
-                }
-            } else {
-                const oldAnalysis = analysisMap[camera.id]
-                if (!_.isNil(oldAnalysis)) {
-                    Object.keys(oldAnalysis).forEach(key => {
-                        client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name, 'objects', key), '0', mqttOptions)
-                    })
-                    delete analysisMap[camera.id]
-                }
-            }
-
             client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name, 'state'), mqtt_helpers.generateTopic(state), mqttOptions)
             client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name), isMotionDetected ? '1' : '0', mqttOptions)
         }
@@ -151,6 +218,7 @@ const startWatching = function() {
     interval(async() => {
         try {
             pollBootstrap()
+            pollEvents()
         } catch (error) {
             logging.error('error polling: ' + error)
         }

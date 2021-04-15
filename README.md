@@ -9,7 +9,7 @@ I have a collection of bridges, and the general format of these begins with thes
       MQTT_HOST: YOUR_MQTT_URL (eg: mqtt://mqtt.yourdomain.net)
       (OPTIONAL) MQTT_USER: YOUR_MQTT_USERNAME
       (OPTIONAL) MQTT_PASS: YOUR_MQTT_PASSWORD
-      (OPTIONAL) MQTT_STATUS_TOPIC_PREFIX: '/status_prefix/' 
+      (OPTIONAL) MQTT_STATUS_TOPIC_PREFIX: '/status_prefix/'
 ```
 
 This will publish and (optionally) subscribe to events for this bridge with the TOPIC_PREFIX of you choosing.
@@ -18,7 +18,7 @@ Generally I use 0 as 'off', and 1 as 'on' for these.
 
 Here's an example docker compose:
 
-```
+```docker
 version: '3.3'
 services:
   mqtt-unifi-protect-bridge:
@@ -34,13 +34,11 @@ services:
       (OPTIONAL) MQTT_USER: YOUR_MQTT_USERNAME
       (OPTIONAL) MQTT_PASS: YOUR_MQTT_PASSWORD
       (OPTIONAL) MQTT_STATUS_TOPIC_PREFIX: '/status_prefix/' (note, it will use logging-name appended to this)
-      (OPTIONAL) ENABLE_IMAGE_ANALYSIS: "1" (turns on coco model image analysis)
-      (OPTIONAL) ANALYSIS_THRESHOLD: "0.9" (confidence level on match, 0.7 is default)
 ```
 
 Here's an example publish for some of my cameras:
 
-```
+```log
 /motion/kitchen_door 0
 /motion/kitchen_door/state connected
 /motion/driveway 0
