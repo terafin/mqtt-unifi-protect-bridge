@@ -184,7 +184,7 @@ async function pollBootstrap() {
         cachedBootstrap = body
 
         for (const camera of cameras) {
-            const name = camera.name
+            const name = camera.name.toLowerCase()
             const state = camera.state
             const lastRing = camera.lastRing
             const lastMotion = camera.lastMotion
@@ -242,7 +242,7 @@ client.on('message', (topic, message) => {
                 logging.info('Looking for camera name: ' + name)
 
                 for (const camera of lastCameras) {
-                    const camera_name = mqtt_helpers.generateTopic(camera.name)
+                    const camera_name = mqtt_helpers.generateTopic(camera.name).toLowerCase()
 
                     if (name == camera_name)
                         protect.updateDoorbellMessage(camera, message.toString())
