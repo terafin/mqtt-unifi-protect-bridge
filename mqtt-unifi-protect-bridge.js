@@ -134,7 +134,7 @@ async function pollEvents() {
             const cameras = cachedBootstrap.cameras
             cameras.forEach(camera_record => {
                 if (camera_record.id == camera_id) {
-                    camera_name = camera_record.name
+                    camera_name = camera_record.name.toLowerCase()
                 }
             })
 
@@ -184,28 +184,30 @@ async function pollBootstrap() {
         cachedBootstrap = body
 
         for (const camera of cameras) {
-            const name = camera.name.toLowerCase()
-            const state = camera.state
-            const lastRing = camera.lastRing
-            const lastMotion = camera.lastMotion
-            const isMotionDetected = camera.isMotionDetected
-            const now = new Date()
-            logging.debug('** camera: ' + JSON.stringify(camera))
+            if (!_.isNil(camera.name)) {
+                const name = camera.name.toLowerCase()
+                const state = camera.state
+                const lastRing = camera.lastRing
+                const lastMotion = camera.lastMotion
+                const isMotionDetected = camera.isMotionDetected
+                const now = new Date()
+                logging.debug('** camera: ' + JSON.stringify(camera))
 
-            if (!_.isNil(lastRing)) {
-                logging.debug('** camera ring:')
-                logging.debug('      lastRing: ' + lastRing)
-                const ringDate = new Date(lastRing)
-                logging.debug('      ringDate: ' + ringDate)
-                const ringTimeDifferenceSeconds = (now - lastRing) / 1000
-                logging.debug('      ringTimeDifferenceSeconds: ' + ringTimeDifferenceSeconds)
+                if (!_.isNil(lastRing)) {
+                    logging.debug('** camera ring:')
+                    logging.debug('      lastRing: ' + lastRing)
+                    const ringDate = new Date(lastRing)
+                    logging.debug('      ringDate: ' + ringDate)
+                    const ringTimeDifferenceSeconds = (now - lastRing) / 1000
+                    logging.debug('      ringTimeDifferenceSeconds: ' + ringTimeDifferenceSeconds)
 
-                const recentRing = (ringTimeDifferenceSeconds < pollTime * 2) ? 1 : 0
-                client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name, 'ringing'), recentRing ? '1' : '0', mqttOptions)
+                    const recentRing = (ringTimeDifferenceSeconds < pollTime * 2) ? 1 : 0
+                    client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name, 'ringing'), recentRing ? '1' : '0', mqttOptions)
+                }
+
+                client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name, 'state'), mqtt_helpers.generateTopic(state), mqttOptions)
+                client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name), isMotionDetected ? '1' : '0', mqttOptions)
             }
-
-            client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name, 'state'), mqtt_helpers.generateTopic(state), mqttOptions)
-            client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name), isMotionDetected ? '1' : '0', mqttOptions)
         }
     } catch (error) {
         logging.error('Failed to poll bootstrap: ' + error)
