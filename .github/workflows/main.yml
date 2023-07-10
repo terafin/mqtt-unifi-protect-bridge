@@ -11,11 +11,7 @@ jobs:
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@v5
       with:
-        name: ghcr.io/${{ secrets.DOCKER_USERNAME }}/${{ secrets.PROJECT_NAME }}
+        name: ghcr.io/${{ github.repository }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
         registry: ghcr.io
-    - name: Deploy
-      uses: wei/curl@v1
-      with:
-        args: -H "X-Docker-Token:${{ secrets.WEBHOOK_AUTH_TOKEN }}"  -X GET "${{ secrets.WEBHOOK_URL }}?DOCKER_SERVICE_NAME=automation_${{ secrets.PROJECT_NAME }}&DOCKER_IMAGE_PREFIX=${{ secrets.DOCKER_USERNAME }}&DOCKER_IMAGE_NAME=${{ secrets.PROJECT_NAME }}&DOCKER_IMAGE_TAG=${{ secrets.DOCKER_IMAGE_TAG }}"

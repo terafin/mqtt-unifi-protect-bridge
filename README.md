@@ -22,7 +22,7 @@ Here's an example docker compose:
 version: '3.3'
 services:
   mqtt-unifi-protect-bridge:
-    image: terafin/mqtt-unifi-protect-bridge:latest
+    image: ghcr.io/terafin/mqtt-unifi-protect-bridge:latest
     environment:
       LOGGING_NAME: mqtt-unifi-protect-bridge
       PROTECT_URL: URL_FOR_UNIFI_PROTECT_LOGIN (eg: https://10.0.1.2:7443)
