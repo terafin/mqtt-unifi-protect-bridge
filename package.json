@@ -15,7 +15,7 @@
         "lodash": "latest",
         "mqtt": "latest",
         "interval-promise": "latest",
-        "got": "^12.5.3"
+        "got": "11.8.5"
     },
     "engines": {
         "node": ">=10"
