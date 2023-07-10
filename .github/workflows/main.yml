@@ -5,4 +5,4 @@ on:
       - master
 jobs:
   build:
-    uses: terafin/workflows/build-and-deploy.yml@main
+    uses: terafin/workflows/.github/workflows/build-and-deploy.yml@main
