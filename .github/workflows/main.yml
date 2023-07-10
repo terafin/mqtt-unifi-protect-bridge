@@ -11,9 +11,10 @@ jobs:
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@v5
       with:
-        name: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.PROJECT_NAME }}
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+        name: ghcr.io/${{ secrets.DOCKER_USERNAME }}/${{ secrets.PROJECT_NAME }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: ghcr.io
     - name: Deploy
       uses: wei/curl@v1
       with:
