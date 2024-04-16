@@ -49,14 +49,14 @@ if (_.isNil(baseTopic)) {
     process.abort()
 }
 
-var connectedEvent = function() {
+var connectedEvent = function () {
     const subscriptionTopic = mqtt_helpers.generateTopic(baseTopic) + '/+/+/set'
     logging.info('subscribing to: ' + subscriptionTopic)
     client.subscribe(subscriptionTopic, { qos: 1 })
     health.healthyEvent()
 }
 
-var disconnectedEvent = function() {
+var disconnectedEvent = function () {
     health.unhealthyEvent()
 }
 
@@ -131,6 +131,9 @@ async function pollEvents() {
             const startTimeSinceNow = (now.getTime() - start) / 1000
             const threshold = (Number(pollTime) + 5)
 
+            if (_.isNil(cachedBootstrap))
+                return;
+
             const cameras = cachedBootstrap.cameras
             cameras.forEach(camera_record => {
                 if (camera_record.id == camera_id) {
@@ -194,14 +197,14 @@ async function pollBootstrap() {
                 logging.debug('** camera: ' + JSON.stringify(camera))
 
                 if (!_.isNil(lastRing)) {
-                    logging.debug('** camera ring:')
-                    logging.debug('      lastRing: ' + lastRing)
+                    logging.info('** camera ring:')
+                    logging.info('      lastRing: ' + lastRing)
                     const ringDate = new Date(lastRing)
-                    logging.debug('      ringDate: ' + ringDate)
+                    logging.info('      ringDate: ' + ringDate)
                     const ringTimeDifferenceSeconds = (now - lastRing) / 1000
-                    logging.debug('      ringTimeDifferenceSeconds: ' + ringTimeDifferenceSeconds)
+                    logging.info('      ringTimeDifferenceSeconds: ' + ringTimeDifferenceSeconds)
 
-                    const recentRing = (ringTimeDifferenceSeconds < pollTime * 2) ? 1 : 0
+                    const recentRing = (ringTimeDifferenceSeconds < pollTime * 3) ? 1 : 0
                     client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name, 'ringing'), recentRing ? '1' : '0', mqttOptions)
                 }
 
@@ -214,10 +217,10 @@ async function pollBootstrap() {
     }
 }
 
-const startWatching = function() {
+const startWatching = function () {
     logging.info('starting poll')
 
-    interval(async() => {
+    interval(async () => {
         try {
             pollBootstrap()
             pollEvents()
@@ -226,7 +229,7 @@ const startWatching = function() {
         }
     }, pollTime * 1000)
 
-    interval(async() => {
+    interval(async () => {
         logging.info(' => polling auth')
         await authentication.authenticate()
     }, authenticate_poll_time * 1000)
