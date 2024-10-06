@@ -11,7 +11,7 @@ import { default as mqtt_helpers } from "homeautomation-js-lib/mqtt_helpers.js"
 
 const username = process.env.USERNAME
 const password = process.env.PASSWORD
-const protectURL = process.env.PROTECT_URL
+var protectURL = process.env.PROTECT_URL
 
 // TODO: Does this library handle this fully?
 var authenticate_poll_time = process.env.AUTH_POLL_FREQUENCY
@@ -38,6 +38,13 @@ const baseTopic = process.env.TOPIC_PREFIX
 if (_.isNil(baseTopic)) {
     logging.warn('TOPIC_PREFIX not set, not starting')
     process.abort()
+}
+
+if (_.startsWith(protectURL)) {
+    logging.warn('PROTECT_URL not set, not starting')
+    process.abort()
+} else if (_.startsWith(protectURL, 'https://') || _.startsWith(protectURL, 'http://')) {
+    protectURL = _.split(protectURL, '//')[1]
 }
 
 var connectedEvent = function () {
@@ -93,7 +100,7 @@ ufp.on("message", (packet) => {
     const smartDetectTypes = payload.smartDetectTypes
 
     logging.debug("Action: " + action + "  model: " + model)
-    if (model == "smartDetectObject" && 0 ) { // Disabled for now
+    if (model == "smartDetectObject" && 0) { // Disabled for now
         var camera_name = null
         const bootstrap = ufp.bootstrap
         const cameras = bootstrap.cameras
@@ -106,15 +113,15 @@ ufp.on("message", (packet) => {
 
         logging.info("smart detect packet: " + JSON.stringify(packet))
         logging.info("camera: " + camera_name + "  detected: " + type)
-//                 if (type == 'smartDetectZone') {
-//                     smartDetectTypes.forEach(detected_type => {
-//                         client.smartPublish(mqtt_helpers.generateTopic(baseTopic, camera_name, detected_type), '1', mqttOptions)
+        //                 if (type == 'smartDetectZone') {
+        //                     smartDetectTypes.forEach(detected_type => {
+        //                         client.smartPublish(mqtt_helpers.generateTopic(baseTopic, camera_name, detected_type), '1', mqttOptions)
 
-//                         setTimeout(() => {
-//                             client.smartPublish(mqtt_helpers.generateTopic(baseTopic, camera_name, detected_type), '0', mqttOptions)
-//                         }, (threshold * 1000 * 2));
-//                     });
-//                 }
+        //                         setTimeout(() => {
+        //                             client.smartPublish(mqtt_helpers.generateTopic(baseTopic, camera_name, detected_type), '0', mqttOptions)
+        //                         }, (threshold * 1000 * 2));
+        //                     });
+        //                 }
 
     }
     if (model == "camera") {
