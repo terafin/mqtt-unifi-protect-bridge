@@ -197,12 +197,12 @@ async function pollBootstrap() {
                 logging.debug('** camera: ' + JSON.stringify(camera))
 
                 if (!_.isNil(lastRing)) {
-                    logging.info('** camera ring:')
-                    logging.info('      lastRing: ' + lastRing)
+                    logging.debug('** camera ring:')
+                    logging.debug('      lastRing: ' + lastRing)
                     const ringDate = new Date(lastRing)
-                    logging.info('      ringDate: ' + ringDate)
+                    logging.debug('      ringDate: ' + ringDate)
                     const ringTimeDifferenceSeconds = (now - lastRing) / 1000
-                    logging.info('      ringTimeDifferenceSeconds: ' + ringTimeDifferenceSeconds)
+                    logging.debug('      ringTimeDifferenceSeconds: ' + ringTimeDifferenceSeconds)
 
                     const recentRing = (ringTimeDifferenceSeconds < pollTime * 3) ? 1 : 0
                     client.smartPublish(mqtt_helpers.generateTopic(baseTopic, name, 'ringing'), recentRing ? '1' : '0', mqttOptions)
