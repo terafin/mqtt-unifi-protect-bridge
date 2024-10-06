@@ -3,21 +3,21 @@
     "version": "0.0.1",
     "description": "Bridge Unifi Protect HTTP to MQTT",
     "license": "MIT",
-    "main": "mqtt-unifi-protect-bridge.js",
+    "exports": "./mqtt-unifi-protect-bridge.js",
     "repository": {
         "url": "https://github.com/terafin/mqtt-unifi-protect-bridge"
     },
+    "type": "module",
     "scripts": {
         "start": "node mqtt-unifi-protect-bridge.js"
     },
     "dependencies": {
         "homeautomation-js-lib": "https://github.com/terafin/homeautomation-js-lib.git",
         "lodash": "latest",
-        "mqtt": "latest",
-        "interval-promise": "latest",
-        "got": "11.8.5"
+        "unifi-protect": "latest",
+        "mqtt": "latest"
     },
     "engines": {
-        "node": ">=10"
+        "node": ">=18"
     }
 }
