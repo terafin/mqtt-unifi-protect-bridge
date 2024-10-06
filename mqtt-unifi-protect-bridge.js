@@ -89,68 +89,71 @@ ufp.on("message", (packet) => {
     const action = packet.header.action
     const model = packet.header.modelKey
     const payload = packet.payload
-    const id = packet.header.id
+    var id = packet.header.id
 
     const ring = payload.ring
     const lastMotion = payload.lastMotion
     const lastRing = payload.lastRing
     const motion = payload.motion
+    const isConnected = payload.isConnected
     const isSmartDetected = payload.isSmartDetected
     const smartDetectZone = payload.smartDetectZone
     const smartDetectTypes = payload.smartDetectTypes
 
     logging.debug("Action: " + action + "  model: " + model)
-    if (model == "smartDetectObject" && 0) { // Disabled for now
+    if (model == "event") { // Disabled for now
         var camera_name = null
+        id = packet.header.recordId
         const bootstrap = ufp.bootstrap
         const cameras = bootstrap.cameras
         cameras.forEach(camera_record => {
             if (camera_record.id == id) {
+                logging.debug("camera: " + JSON.stringify(camera_record))
                 camera_name = camera_record.name.toLowerCase()
             }
         })
-        const type = packet.body.type
+        logging.debug("event detect packet: " + JSON.stringify(packet))
+        const types = packet.payload.smartDetectTypes
+        if (!_.isNil(camera_name) && !_.isNil(types)) {
+            types.forEach(type => {
+                logging.debug("camera: " + camera_name + "  detected: " + type)
+                client.smartPublish(mqtt_helpers.generateTopic(baseTopic, camera_name, type), '1', mqttOptions)
 
-        logging.info("smart detect packet: " + JSON.stringify(packet))
-        logging.info("camera: " + camera_name + "  detected: " + type)
-        //                 if (type == 'smartDetectZone') {
-        //                     smartDetectTypes.forEach(detected_type => {
-        //                         client.smartPublish(mqtt_helpers.generateTopic(baseTopic, camera_name, detected_type), '1', mqttOptions)
-
-        //                         setTimeout(() => {
-        //                             client.smartPublish(mqtt_helpers.generateTopic(baseTopic, camera_name, detected_type), '0', mqttOptions)
-        //                         }, (threshold * 1000 * 2));
-        //                     });
-        //                 }
-
-    }
-    if (model == "camera") {
+                setTimeout(() => {
+                    client.smartPublish(mqtt_helpers.generateTopic(baseTopic, camera_name, type), '0', mqttOptions)
+                }, (1000 * 5));
+            });
+        }
+    } else if (model == "camera") {
         var camera_name = null
         const bootstrap = ufp.bootstrap
+        var camera_supports_doorbell = false
         const cameras = bootstrap.cameras
         cameras.forEach(camera_record => {
             if (camera_record.id == id) {
                 camera_name = camera_record.name.toLowerCase()
+                camera_supports_doorbell = camera_record.featureFlags.isDoorbell
             }
         })
 
         logging.debug("Action: " + action + "  model: " + model)
+        logging.debug("camera packet: " + JSON.stringify(packet))
         logging.debug("id: " + id)
         logging.debug("name: " + camera_name)
         logging.debug("lastMotion: " + lastMotion)
         logging.debug("ring: " + ring)
         logging.debug("lastRing: " + lastRing)
         logging.debug("isSmartDetected: " + isSmartDetected)
+        logging.debug("isConnected: " + isConnected)
+
         logging.debug("motion: " + motion)
         logging.debug("smartDetectZone: " + smartDetectZone)
-        logging.debug("smartDetectZone: " + smartDetectTypes)
+        logging.debug("smartDetectTypes: " + smartDetectTypes)
 
         const isMotionDetected = isSmartDetected || lastMotion
         client.smartPublish(mqtt_helpers.generateTopic(baseTopic, camera_name), isMotionDetected ? '1' : '0', mqttOptions)
 
-        // TODO: Check to see if the device supports ringing before publishing this
-        client.smartPublish(mqtt_helpers.generateTopic(baseTopic, camera_name, 'ringing'), lastRing ? '1' : '0', mqttOptions)
-        // TODO: this should be offline/online
-        // client.smartPublish(mqtt_helpers.generateTopic(baseTopic, camera_name, 'state'), mqtt_helpers.generateTopic(state), mqttOptions)
+        if (camera_supports_doorbell)
+            client.smartPublish(mqtt_helpers.generateTopic(baseTopic, camera_name, 'ringing'), lastRing ? '1' : '0', mqttOptions)
     }
 })
