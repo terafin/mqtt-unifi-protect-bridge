@@ -7,4 +7,7 @@ RUN apt-get update ; apt-get install -fy git python3 make g++ curl dirmngr apt-t
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh
 RUN bash nodesource_setup.sh
 RUN apt-get install -fy nodejs
+
+RUN npm install --production
+
 CMD ["npm", "start"]
