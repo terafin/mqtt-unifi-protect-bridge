@@ -15,6 +15,7 @@
         "homeautomation-js-lib": "https://github.com/terafin/homeautomation-js-lib.git",
         "lodash": "latest",
         "unifi-protect": "latest",
+        "interval-promise": "latest",
         "mqtt": "latest"
     },
     "engines": {

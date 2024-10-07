@@ -4,6 +4,7 @@ import { ProtectApi } from "unifi-protect"
 import util from "node:util"
 
 import { default as mqtt } from "mqtt"
+import { default as interval } from "interval-promise"
 import { default as _ } from "lodash"
 import { default as logging } from "homeautomation-js-lib/logging.js"
 import { default as health } from "homeautomation-js-lib/health.js"
@@ -12,6 +13,7 @@ import { default as mqtt_helpers } from "homeautomation-js-lib/mqtt_helpers.js"
 const username = process.env.USERNAME
 const password = process.env.PASSWORD
 var protectURL = process.env.PROTECT_URL
+var bootstrapPollInterval = process.env.BOOTSTRAP_POLL_FREQUENCY
 
 // TODO: Does this library handle this fully?
 var authenticate_poll_time = process.env.AUTH_POLL_FREQUENCY
@@ -38,6 +40,10 @@ const baseTopic = process.env.TOPIC_PREFIX
 if (_.isNil(baseTopic)) {
     logging.warn('TOPIC_PREFIX not set, not starting')
     process.abort()
+}
+
+if (_.isNil(bootstrapPollInterval)) {
+    bootstrapPollInterval = 60
 }
 
 if (_.startsWith(protectURL)) {
@@ -84,6 +90,14 @@ if (!(await ufp.getBootstrap())) {
     console.log("Unable to bootstrap the Protect controller.")
     process.exit(0)
 }
+
+const startBootstrapPoll = function () {
+    interval(async () => {
+        ufp.getBootstrap()
+    }, bootstrapPollInterval * 1000)
+}
+
+startBootstrapPoll()
 
 ufp.on("message", (packet) => {
     const action = packet.header.action
