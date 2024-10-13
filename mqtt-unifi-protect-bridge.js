@@ -159,12 +159,13 @@ ufp.on("message", (packet) => {
     logging.debug("Action: " + action + "  model: " + model)
     switch (model) {
         case "sensor":
+            logging.debug("sensor name: " + sensor_name)
             logging.debug("sensor packet: " + JSON.stringify(packet))
             logging.debug("sensor packet stats: " + JSON.stringify(packet.payload))
-            logging.debug("sensor name: " + sensor_name)
             sensor_name = sensor_name = _.replace(sensor_name, ' ', '/')
-            client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name), packet.payload.isOpened ? '1' : '0', mqttOptions)
-            if (sensor_supports_motion)
+            if (!_.isNil(packet.payload.isOpened))
+                client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name), packet.payload.isOpened ? '1' : '0', mqttOptions)
+            if (sensor_supports_motion && !_.isNil(packet.payload.isMotionDetected))
                 client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name, 'motion'), packet.payload.isMotionDetected ? '1' : '0', mqttOptions)
             if (sensor_supports_humidity && !_.isNil(packet.payload.stats) && !_.isNil(packet.payload.stats.humidity))
                 client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name, 'humidity'), packet.payload.stats.humidity.value, mqttOptions)
