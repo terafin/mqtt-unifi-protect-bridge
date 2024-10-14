@@ -145,10 +145,13 @@ ufp.on("message", (packet) => {
     var sensor_supports_humidity = false
     var sensor_supports_temperature = false
     var sensor_supports_light = false
+    var sensor_mount_type = false
 
     sensors.forEach(sensor_record => {
         if (sensor_record.id == id) {
+            logging.debug("sensor record: " + JSON.stringify(sensor_record))
             sensor_name = sensor_record.name.toLowerCase()
+            sensor_mount_type = sensor_record.mountType
             sensor_supports_motion = sensor_record.motionSettings.isEnabled
             sensor_supports_humidity = sensor_record.humiditySettings.isEnabled
             sensor_supports_temperature = sensor_record.temperatureSettings.isEnabled
