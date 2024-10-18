@@ -135,7 +135,7 @@ ufp.on("message", (packet) => {
     const cameras = bootstrap.cameras
     cameras.forEach(camera_record => {
         if (camera_record.id == id) {
-            camera_name = camera_record.name.toLowerCase()
+            camera_name = !_.isNil(camera_record.name) ? camera_record.name.toLowerCase() : null
             camera_supports_doorbell = camera_record.featureFlags.isDoorbell
         }
     })
@@ -150,7 +150,7 @@ ufp.on("message", (packet) => {
     sensors.forEach(sensor_record => {
         if (sensor_record.id == id) {
             logging.debug("sensor record: " + JSON.stringify(sensor_record))
-            sensor_name = sensor_record.name.toLowerCase()
+            sensor_name = !_.isNil(sensor_record.name) ? sensor_record.name.toLowerCase() : null
             sensor_mount_type = sensor_record.mountType
             sensor_supports_motion = sensor_record.motionSettings.isEnabled
             sensor_supports_humidity = sensor_record.humiditySettings.isEnabled
@@ -163,19 +163,21 @@ ufp.on("message", (packet) => {
     switch (model) {
         case "sensor":
             logging.debug("sensor name: " + sensor_name)
-            logging.debug("sensor packet: " + JSON.stringify(packet))
-            logging.debug("sensor packet stats: " + JSON.stringify(packet.payload))
-            sensor_name = sensor_name = _.replace(sensor_name, ' ', '/')
-            if (!_.isNil(packet.payload.isOpened))
-                client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name), packet.payload.isOpened ? '1' : '0', mqttOptions)
-            if (sensor_supports_motion && !_.isNil(packet.payload.isMotionDetected))
-                client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name, 'motion'), packet.payload.isMotionDetected ? '1' : '0', mqttOptions)
-            if (sensor_supports_humidity && !_.isNil(packet.payload.stats) && !_.isNil(packet.payload.stats.humidity))
-                client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name, 'humidity'), packet.payload.stats.humidity.value, mqttOptions)
-            if (sensor_supports_temperature && !_.isNil(packet.payload.stats) && !_.isNil(packet.payload.stats.temperature))
-                client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name, 'temperature'), packet.payload.stats.temperature.value, mqttOptions)
-            if (sensor_supports_light && !_.isNil(packet.payload.stats) && !_.isNil(packet.payload.stats.light))
-                client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name, 'light'), packet.payload.stats.light.value, mqttOptions)
+            if (!_.isNil(sensor_name)) {
+                logging.debug("sensor packet: " + JSON.stringify(packet))
+                logging.debug("sensor packet stats: " + JSON.stringify(packet.payload))
+                sensor_name = sensor_name = _.replace(sensor_name, ' ', '/')
+                if (!_.isNil(packet.payload.isOpened))
+                    client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name), packet.payload.isOpened ? '1' : '0', mqttOptions)
+                if (sensor_supports_motion && !_.isNil(packet.payload.isMotionDetected))
+                    client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name, 'motion'), packet.payload.isMotionDetected ? '1' : '0', mqttOptions)
+                if (sensor_supports_humidity && !_.isNil(packet.payload.stats) && !_.isNil(packet.payload.stats.humidity))
+                    client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name, 'humidity'), packet.payload.stats.humidity.value, mqttOptions)
+                if (sensor_supports_temperature && !_.isNil(packet.payload.stats) && !_.isNil(packet.payload.stats.temperature))
+                    client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name, 'temperature'), packet.payload.stats.temperature.value, mqttOptions)
+                if (sensor_supports_light && !_.isNil(packet.payload.stats) && !_.isNil(packet.payload.stats.light))
+                    client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name, 'light'), packet.payload.stats.light.value, mqttOptions)
+            }
             break;
         case "event":
             var camera_name = null
@@ -215,11 +217,13 @@ ufp.on("message", (packet) => {
             logging.debug("smartDetectZone: " + smartDetectZone)
             logging.debug("smartDetectTypes: " + smartDetectTypes)
 
-            const isMotionDetected = isSmartDetected || lastMotion
-            client.smartPublish(mqtt_helpers.generateTopic(cameraBaseTopic, camera_name), isMotionDetected ? '1' : '0', mqttOptions)
+            if (!_.isNil(camera_name)) {
+                const isMotionDetected = isSmartDetected || lastMotion
+                client.smartPublish(mqtt_helpers.generateTopic(cameraBaseTopic, camera_name), isMotionDetected ? '1' : '0', mqttOptions)
 
-            if (camera_supports_doorbell)
-                client.smartPublish(mqtt_helpers.generateTopic(cameraBaseTopic, camera_name, 'ringing'), lastRing ? '1' : '0', mqttOptions)
+                if (camera_supports_doorbell)
+                    client.smartPublish(mqtt_helpers.generateTopic(cameraBaseTopic, camera_name, 'ringing'), lastRing ? '1' : '0', mqttOptions)
+            }
             break;
     }
 })
