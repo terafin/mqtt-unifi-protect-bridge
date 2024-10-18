@@ -145,7 +145,7 @@ ufp.on("message", (packet) => {
     var sensor_supports_humidity = false
     var sensor_supports_temperature = false
     var sensor_supports_light = false
-    var sensor_mount_type = false
+    var sensor_mount_type = null
 
     sensors.forEach(sensor_record => {
         if (sensor_record.id == id) {
@@ -156,6 +156,7 @@ ufp.on("message", (packet) => {
             sensor_supports_humidity = sensor_record.humiditySettings.isEnabled
             sensor_supports_temperature = sensor_record.temperatureSettings.isEnabled
             sensor_supports_light = sensor_record.lightSettings.isEnabled
+            sensor_mount_type = sensor_record.mountType
         }
     })
 
@@ -177,6 +178,8 @@ ufp.on("message", (packet) => {
                     client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name, 'temperature'), packet.payload.stats.temperature.value, mqttOptions)
                 if (sensor_supports_light && !_.isNil(packet.payload.stats) && !_.isNil(packet.payload.stats.light))
                     client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name, 'light'), packet.payload.stats.light.value, mqttOptions)
+                if (sensor_mount_type == "leak")
+                    client.smartPublish(mqtt_helpers.generateTopic(sensorBaseTopic, sensor_name), !_.isNil(packet.payload.leakDetectedAt) ? '1' : '0', mqttOptions)
             }
             break;
         case "event":
